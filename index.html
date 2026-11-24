@@ -134,7 +134,9 @@
   .sel { flex: none; width: 112px; padding: 5px 6px; background: #fff; cursor: pointer; }
   .setrow { margin-bottom: 8px; }
   #petWrap { touch-action: none; }
-  #petWrap.grabbing { cursor: grabbing; }
+  #petWrap.grabbing, body.moving, body.moving * { cursor: grabbing !important; }
+  body.app #petWrap { cursor: grab; }
+  body.app #stage, body.app #grip { -webkit-app-region: no-drag !important; app-region: no-drag !important; }
   #backside { visibility: hidden; }
   #octo.back #backside { visibility: visible; }
   #octo.back #squish [data-moods], #octo.back #blink, #octo.back .cheek { visibility: hidden; }
@@ -169,6 +171,9 @@
   body.dark #grip, body.dark #patHint { background: rgba(45,50,80,.85); color: #d4b2a5; }
   body.dark #patHint { background: none; }
   body.dark #fx .dot { background: #2d3250; }
+  /* inky-bot: never draw a background */
+  html, body, body.t-morning, body.t-evening, body.dark, body.calm { background: transparent !important; }
+  body::before { display: none !important; }
   /* animations */
   #bodyall { animation: bob 3s ease-in-out infinite; }
   @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
@@ -237,11 +242,11 @@
 </head>
 <body class="folded">
 <div id="stage">
-  <div id="grip" title="drag here to move inky">• • • drag to move • • •</div>
+  <div id="grip" title="drag here to move inky">• • • drag me • • •</div>
   <div id="timerTag"></div>
   <div class="bubble card" id="bubble"><button id="spk" class="iconbtn hidden" type="button" title="voice replies: off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"/><path id="spkWaves" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="spkMute" d="M16 9l6 6M22 9l-6 6"/></svg></button><div id="you"></div><div id="say">hi hi! i'm inky~ talk to me, or give me a pat.</div></div>
   <div id="tail"></div>
-  <div id="petWrap" title="pat inky · drag to spin">
+  <div id="petWrap" title="click to pat · drag to move · scroll to spin">
     <canvas id="octo3d" width="340" height="340"></canvas>
     <div id="fx">
       <span data-moods="thinking" class="dot" style="right:22px;top:30px"></span><span data-moods="thinking" class="dot d1" style="right:12px;top:16px;width:12px;height:12px"></span><span data-moods="thinking" class="dot d2" style="right:0;top:0;width:15px;height:15px"></span>
@@ -469,7 +474,7 @@
       <div class="row setrow hidden" id="voiceRow" style="margin-top:10px"><span class="lbl">inky's voice</span>
         <select class="mini sel" id="voiceSel" style="width:96px"><option value="airy">airy</option><option value="buttery">buttery</option><option value="glassy">glassy</option><option value="rounded">rounded</option></select>
         <button class="btn ghost" id="voiceTest" type="button">test</button></div>
-      <p class="muted" id="setupNote" style="margin:8px 0 0">Drag Inky to spin it around, double-click to fold it back. Shortcut once set up: ⌥⇧I to summon Inky. ⌘Q quits.</p>
+      <p class="muted" id="setupNote" style="margin:8px 0 0">Drag Inky to move it, scroll over it (or Shift+drag) to spin it, double-click to fold it back. Shortcut once set up: ⌥⇧I to summon Inky. ⌘Q quits.</p>
     </div>
   </div>
 
@@ -546,7 +551,7 @@ function unfold() { setFolded(false); lastUI = Date.now(); }
 function fitWindow() {
   clearTimeout(fitT);
   fitT = setTimeout(() => {
-    if (!desktop?.window || !document.body.classList.contains('float')) return;
+    if (!desktop?.window || !document.body.classList.contains('app')) return;
     const h = Math.ceil($('stage').getBoundingClientRect().height) + 14;
     desktop.window.place({ pin: openDown ? 'top_left' : 'bottom_left', width: FLOAT.width, height: Math.max(220, h) }).catch(() => {});
   }, 60);
@@ -677,19 +682,57 @@ let suppressClick = false;
 $('petWrap').addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } pet(); });
 $('petWrap').addEventListener('dblclick', (e) => {
   e.preventDefault();
-  if (spin.moved) return;
+  if (spin.moved || mv.moved) return;
   clearTimeout(moodTimer);
   setTimeout(() => { setFolded(true); if (!busy && !sleep.running && !calm.running) { setMood('happy'); } }, 150);
 });
 
 /* ---------- spin by dragging ---------- */
 const spin = { ry: 0, rx: 0, vy: 0, vx: 0, drag: false, moved: false, lx: 0, ly: 0, lt: 0, travel: 0, shown: '' };
+// in the desktop app, dragging Inky moves it around the screen; scrolling (or Shift+drag) spins it
+const canMove = () => !!(desktop?.window && document.body.classList.contains('app'));
+const mv = { on: false, moved: false, sx: 0, sy: 0, bx: 0, by: 0, ready: false, raf: 0, nx: 0, ny: 0 };
+function startMove(e, el) {
+  mv.on = true; mv.moved = false; mv.ready = false; mv.sx = e.screenX; mv.sy = e.screenY;
+  try { el.setPointerCapture(e.pointerId); } catch {}
+  desktop.window.getBounds().then((b) => { mv.bx = b.x; mv.by = b.y; mv.ready = true; }).catch(() => { mv.on = false; });
+}
+function doMove(e) {
+  if (!mv.on) return false;
+  const dx = e.screenX - mv.sx, dy = e.screenY - mv.sy;
+  if (!mv.moved && Math.abs(dx) + Math.abs(dy) > 4) { mv.moved = true; document.body.classList.add('moving'); }
+  if (!mv.moved || !mv.ready) return true;
+  mv.nx = Math.round(mv.bx + dx); mv.ny = Math.round(mv.by + dy);
+  if (!mv.raf) mv.raf = requestAnimationFrame(() => { mv.raf = 0; desktop.window.setBounds({ x: mv.nx, y: mv.ny }).catch(() => {}); });
+  return true;
+}
+function endMove() {
+  if (!mv.on) return false;
+  mv.on = false; document.body.classList.remove('moving');
+  if (mv.moved) {
+    suppressClick = true; setTimeout(() => { suppressClick = false; }, 50);
+    setTimeout(() => desktop.window.getBounds().then((b) => store.set('spot', { x: b.x, y: b.y })).catch(() => {}), 120);
+    setTimeout(updateDirection, 200);
+    if (!busy && !sleep.running && !calm.running) { setMood('happy'); if (!folded) showExchange('', pick(['wheee, new spot!', 'ooh, nice view from here~', 'i like it here!'])); settleMood(2000); }
+  }
+  return true;
+}
+$('grip').addEventListener('pointerdown', (e) => { if (canMove()) { e.preventDefault(); startMove(e, $('grip')); } });
+$('grip').addEventListener('pointermove', doMove);
+$('grip').addEventListener('pointerup', endMove);
+$('grip').addEventListener('pointercancel', endMove);
+$('petWrap').addEventListener('wheel', (e) => {
+  e.preventDefault();
+  spin.vy += (e.deltaX || e.deltaY) * .06; spin.vx -= (e.deltaX ? e.deltaY : 0) * .06;
+}, { passive: false });
 $('petWrap').addEventListener('pointerdown', (e) => {
+  if (canMove() && !e.shiftKey) { startMove(e, $('petWrap')); return; }
   spin.drag = true; spin.moved = false; spin.lx = e.clientX; spin.ly = e.clientY; spin.lt = performance.now();
   spin.vx = spin.vy = 0; spin.start = 0;
   try { $('petWrap').setPointerCapture(e.pointerId); } catch {}
 });
 $('petWrap').addEventListener('pointermove', (e) => {
+  if (doMove(e)) return;
   if (!spin.drag) return;
   const dx = e.clientX - spin.lx, dy = e.clientY - spin.ly, now = performance.now(), dt = Math.max(8, now - spin.lt);
   spin.start += Math.abs(dx) + Math.abs(dy);
@@ -700,6 +743,7 @@ $('petWrap').addEventListener('pointermove', (e) => {
   spin.lx = e.clientX; spin.ly = e.clientY; spin.lt = now;
 });
 function endDrag() {
+  if (endMove()) return;
   if (!spin.drag) return;
   spin.drag = false; $('petWrap').classList.remove('grabbing');
   if (spin.moved) suppressClick = true;
@@ -1986,7 +2030,7 @@ const TRAY_ICON = trayIcon();
 
 /* ---------- desktop app ---------- */
 const FLOAT = { frame: false, transparent: true, alwaysOnTop: true, hasShadow: false, resizable: false, dragHeight: 0, width: 280, height: 700 };
-const WINDOWED = { titleBarStyle: 'hiddenInset', resizable: true, width: 300, height: 780 };
+const WINDOWED = { titleBarStyle: 'hiddenInset', resizable: true, width: 280, height: 320 };
 
 function summon() { unfold(); desktop.window.show().catch(() => {}); setTimeout(() => $('msg').focus(), 80); }
 async function setTray() {
@@ -2034,14 +2078,16 @@ async function goFloat() {
     const setIgnore = (v) => { if (v === ignoring) return; ignoring = v; desktop.window.setIgnoreMouseEvents(v, { forward: true }).catch(() => {}); };
     const SOLID = '#petWrap, #grip, #panel, #nav, #chat, #suggest, #bubble, #timerTag, #tail';
     document.addEventListener('mousemove', (e) => {
-      if (spin.drag) return setIgnore(false);
+      if (spin.drag || mv.on) return setIgnore(false);
       setIgnore(!(e.target instanceof Element && e.target.closest(SOLID)));
     });
     document.addEventListener('mouseleave', () => setIgnore(true));
     setIgnore(true);
     new ResizeObserver(fitWindow).observe($('stage')); fitWindow();
     desktop.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }).catch(() => {});
-    if (!store.get('placed', false)) { await desktop.window.place({ anchor: 'bottom_right', margin: 20 }).catch(() => {}); store.set('placed', true); }
+    const spot = store.get('spot', null);
+    if (spot) await desktop.window.setBounds({ x: spot.x, y: spot.y }).catch(() => {});
+    else if (!store.get('placed', false)) { await desktop.window.place({ anchor: 'bottom_right', margin: 20 }).catch(() => {}); store.set('placed', true); }
   } catch (e) { console.warn(e); }
 }
 
@@ -2068,7 +2114,8 @@ async function goFloat() {
   if (need.length) { $('setupBtn').classList.remove('hidden'); if (!store.get('greeted', false)) { showExchange('', "i live here now! pat me and say yes, and i'll float on your desktop with no window around me~"); store.set('greeted', true); } }
   if (['overlay', 'menu-bar', 'notifications', 'shortcuts'].some(p => st[p] === 'denied')) $('manageBtn').classList.remove('hidden');
   if (st.overlay === 'granted') await goFloat();
-  else await desktop.window.setOptions(WINDOWED).catch(() => {});
+  else { await desktop.window.setOptions(WINDOWED).catch(() => {}); new ResizeObserver(fitWindow).observe($('stage')); fitWindow(); }
+  const autoSetup = () => { if (document.visibilityState === 'visible' && !document.body.classList.contains('float') && !askedFloat) { askedFloat = true; $('setupBtn').onclick(); } };
   $('setupBtn').onclick = async () => {
     try {
       const r = await desktop.permissions.request(['overlay', 'menu-bar', 'notifications', 'shortcuts']);
@@ -2077,9 +2124,14 @@ async function goFloat() {
       if (Object.values(r).includes('denied')) $('manageBtn').classList.remove('hidden');
       if (r.overlay === 'granted') goFloat(); else showExchange('', "okay! i'll stay in my cozy window~");
       setTimeout(() => setFolded(true), 2500);
-    } catch (e) { console.warn(e); }
+    } catch (e) { console.warn(e); askedFloat = false; }
   };
   $('manageBtn').onclick = () => desktop.permissions.manage().catch(() => {});
+  if (st.overlay === 'prompt') {
+    setTimeout(autoSetup, 600);
+    window.addEventListener('focus', () => setTimeout(autoSetup, 200), { once: true });
+    document.addEventListener('visibilitychange', () => setTimeout(autoSetup, 200), { once: true });
+  }
 })();
 $('hideBtn').onclick = () => desktop?.window.hide().catch(() => {});
 /* ---------- 3D Inky (three.js) ---------- */

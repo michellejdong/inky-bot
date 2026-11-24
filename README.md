@@ -22,15 +22,15 @@ There are two versions of Inky. They have the same features and differ only in h
 |---|---|---|
 | Looks like | Just Inky, floating on your desktop | Inky in a cozy app window with a soft background |
 | Window | None: no frame and no background, and clicks pass through the empty space around Inky | A small window you can move around |
-| Moving it | Hover over Inky and drag the **• • • drag to move • • •** handle that appears | Drag the handle (always visible) |
+| Moving it | Just drag Inky anywhere (scroll over it to spin it) | Drag the handle (dragging Inky spins it) |
 | Best for | A pet that lives on your desktop | A little app you open when you need it |
-| How it starts floating | Pat Inky once and allow it | **more → set me up** |
+| How it starts | Floating with no background, right away (one **Allow** on first launch) | In a small window, then **more → set me up** |
 
 ## Features
 
 | | |
 |---|---|
-| **3D Inky** | A real 3D octopus with eight curly tentacles. Drag it to spin it any direction (it has spots on its back). Its eyes follow your cursor, and it blinks and breathes. |
+| **3D Inky** | A real 3D octopus with eight curly tentacles. Spin it any direction by scrolling over it or Shift+dragging (it has spots on its back). Its eyes follow your cursor, and it blinks and breathes. |
 | **Lively reactions** | About a dozen different reactions when you pat it (jumps, flips, spins, dances, rainbow shimmer, an ink puff…), never the same one twice in a row. Click fast and it gets dizzy. There are rare surprises too: its sprout blooms, or it turns gold. |
 | **Tidy by default** | Usually it's just Inky. Pat it and the menus appear. They fold away after about 25 seconds without use, or when you double-click Inky. |
 | **Chat** *(in Claude)* | Ask Inky anything. Its face changes with the mood of its answer, and quick-reply buttons help you keep going. Choose a model: quick, balanced, deep, Haiku 4.5, Sonnet 5.5 or Opus 5.5. |
@@ -78,10 +78,10 @@ You need a [Claude](https://claude.ai) account and the **Claude desktop app** (m
    - *Already have a link?* If someone shared their Inky artifact with you, open that link in the Claude desktop app and skip ahead. Some features are limited for shared copies (see [Good to know](#good-to-know)).
 2. **Install it as an app:** pat Inky, tap **more → install inky as a desktop app**, and confirm. You can also use **Install as app** in the artifact's menu.
 3. **Open the app.** Inky opens with its own octopus icon in the Dock.
-4. **Let it float.** Click (pat) Inky once. A permission dialog asks to let Inky float, sit in the menu bar, send notifications and use a shortcut. Click **Allow**.
-   - Inky's window disappears, and from then on it's just Inky on your desktop, with no frame and no background.
+4. **Allow it to float.** On first launch, Inky right away asks to float, sit in the menu bar, send notifications and use a shortcut. Click **Allow**. If you missed the dialog, pat Inky once to ask again.
+   - The window disappears, and from then on Inky always starts as just itself on your desktop, with no frame and no background.
    - If Inky says *"almost! quit me (cmd+q) and open me again"*, press **⌘Q** and open it again.
-5. **Put it anywhere.** Hover over Inky and drag the **• • • drag to move • • •** handle that appears. You can also use **more → move inky** (↖ ↗ ◎ ↙ ↘) or the menu bar icon's **Move Inky to**.
+5. **Put it anywhere.** Just drag Inky. It remembers its spot next time. You can also use **more → move inky** (↖ ↗ ◎ ↙ ↘) or the menu bar icon's **Move Inky to**.
 6. *(Optional)* **Bots on your Mac and Spotify:** tap **quick → find bots on my Mac** and allow **full access**. The first time Inky controls Spotify, macOS asks whether it may; click **OK**.
 7. *(Optional)* **Start at login:** System Settings → General → Login Items → add Inky.
 
@@ -105,9 +105,10 @@ You can also host it for free on [GitHub Pages](#host-it-on-github-pages).
 | Do this | To |
 |---|---|
 | **Click** Inky | Pat it and open the menus |
-| **Drag** Inky | Spin it around in 3D (flick it for momentum) |
+| **Drag** Inky | Move it anywhere on your screen *(desktop app; in a browser, dragging spins it)* |
+| **Scroll** over Inky, or **Shift+drag** | Spin it around in 3D |
 | **Double-click** Inky | Fold everything back to just Inky |
-| Hover over Inky, then drag the **• • • drag to move • • •** handle | Move Inky anywhere on your screen |
+| Drag the **• • • drag me • • •** handle (appears on hover) | Also moves Inky |
 | **⌥⇧I** (Option+Shift+I) | Bring Inky up from anywhere *(desktop app)* |
 | **Menu bar icon** | Talk, quick instructions, focus, break, morning and sleep routines, meditate, tasks, ideas, move, open Claude, pat, hide/show |
 | **⌘Q** | Quit *(desktop app)* |
