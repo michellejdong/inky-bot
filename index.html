@@ -497,6 +497,8 @@
         <button class="chip hidden" id="hideBtn" type="button">tuck away (bring back from menu bar)</button>
         <button class="chip" id="clearBtn" type="button">fresh chat</button>
       </div>
+      <div class="row setrow hidden" id="menuPrefRow" style="margin-top:10px"><span class="lbl">menus open</span>
+        <select class="mini sel" id="menuPrefSel"><option value="side">beside Inky (left/right)</option><option value="vertical">above or below</option></select></div>
       <div class="row setrow" style="margin-top:10px"><span class="lbl">inky's look</span>
         <select class="mini sel" id="lookSel"><option value="auto">follow the clock</option><option value="morning">morning</option><option value="afternoon">afternoon</option><option value="evening">evening</option></select></div>
       <div class="row setrow"><span class="lbl">dark mode</span>
@@ -507,6 +509,7 @@
       <div class="row setrow hidden" id="voiceRow" style="margin-top:10px"><span class="lbl">inky's voice</span>
         <select class="mini sel" id="voiceSel" style="width:96px"><option value="airy">airy</option><option value="buttery">buttery</option><option value="glassy">glassy</option><option value="rounded">rounded</option></select>
         <button class="btn ghost" id="voiceTest" type="button">test</button></div>
+      <p class="muted" id="verNote" style="margin:8px 0 0;font-weight:800"></p>
       <p class="muted" id="setupNote" style="margin:8px 0 0">Drag Inky to move it, scroll over it (or Shift+drag) to spin it. Fold it back with a double-click, the – button or Esc. Shortcut once set up: ⌥⇧I to summon Inky. ⌘Q quits.</p>
     </div>
   </div>
@@ -560,13 +563,14 @@ const store = {
 let folded = true, lastUI = Date.now(), fitT, openDown = false;
 // Inky's spot on the screen (top-center of Inky, in screen pixels). The window is laid out around it,
 // so Inky never jumps, and the menus open toward whichever side has room.
-let anchor = null, area = null;
+let anchor = null, area = null, menuPref = store.get('menuPref', 'side');
 async function screenArea(x, y) {
-  let a = { x: screen.availLeft || 0, y: screen.availTop || 0, width: screen.availWidth, height: screen.availHeight };
+  let a = { x: screen.availLeft || 0, y: screen.availTop || 0, width: screen.availWidth, height: screen.availHeight, full: { x: 0, y: 0, width: screen.width, height: screen.height } };
   try {
     const ds = await desktop.screen.getAllDisplays();
-    const d = ds.find(d => x >= d.bounds.x && x < d.bounds.x + d.bounds.width && y >= d.bounds.y && y < d.bounds.y + d.bounds.height);
-    if (d) a = d.workArea;
+    const d = ds.find(d => x >= d.bounds.x && x < d.bounds.x + d.bounds.width && y >= d.bounds.y && y < d.bounds.y + d.bounds.height)
+      || ds.reduce((best, d) => { const dx = Math.max(d.bounds.x - x, 0, x - d.bounds.x - d.bounds.width), dy = Math.max(d.bounds.y - y, 0, y - d.bounds.y - d.bounds.height), dist = dx + dy; return !best || dist < best.dist ? { ...d, dist } : best; }, null);
+    if (d) a = { ...d.workArea, full: d.bounds };
   } catch {}
   return a;
 }
@@ -591,10 +595,12 @@ async function layout() {
     const left = anchor.x - area.x, right = area.x + area.width - anchor.x;
     // pick a side: above if it fits, else below, else beside Inky (left/right) if that has room, else the bigger of above/below
     let mode = 'up';
+    const sideRoom = 85 + 12 + 250 + 10;   // half of Inky + gap + menus + margin
     if (!folded) {
-      if (need <= above) mode = 'up';
+      if (menuPref === 'side' && Math.max(left, right) >= sideRoom) mode = right >= left ? 'side-right' : 'side-left';
+      else if (need <= above) mode = 'up';
       else if (need <= below) mode = 'down';
-      else if (Math.max(left, right) >= 85 + 12 + 250 + 10) mode = right >= left ? 'side-right' : 'side-left';
+      else if (Math.max(left, right) >= sideRoom) mode = right >= left ? 'side-right' : 'side-left';
       else mode = below > above ? 'down' : 'up';
     }
     const side = mode.startsWith('side'), down = mode === 'down' || side;
@@ -611,8 +617,15 @@ async function layout() {
     const r = $('petWrap').getBoundingClientRect(), st = $('stage').getBoundingClientRect();
     const W = folded ? Math.ceil(st.width) + 6 : Math.max(FLOAT.width, Math.ceil(st.width) + 20), H = Math.ceil(st.bottom) + (folded ? 4 : 8);
     let x = Math.round(anchor.x - (r.left + r.width / 2)), y = Math.round(anchor.y - r.top);
-    x = Math.min(Math.max(x, area.x), area.x + area.width - W);           // keep the whole window on screen
-    y = Math.min(Math.max(y, area.y), area.y + area.height - H);
+    if (folded) {
+      // folded: Inky may sit right on the screen edge (even over the Dock / menu bar), tucked slightly past it
+      const f = area.full || area, slack = 30;
+      x = Math.min(Math.max(x, f.x - slack), f.x + f.width - W + slack);
+      y = Math.min(Math.max(y, f.y - slack), f.y + f.height - H + slack);
+    } else {
+      x = Math.min(Math.max(x, area.x), area.x + area.width - W);         // open: keep the whole menu on screen
+      y = Math.min(Math.max(y, area.y), area.y + area.height - H);
+    }
     await desktop.window.setBounds({ x, y, width: W, height: H });
     if (fade) { await nextFrame(); cls.remove('relayout'); }
   } catch (e) { console.warn(e); document.body.classList.remove('relayout'); }
@@ -2122,6 +2135,11 @@ $('mornStart').onclick = () => (morn.running ? endMorning(false) : startMorning(
 $('wakeNav').onclick = () => { if (!morn.running) startMorning(); else openTab('morning'); };
 renderMorning();
 
+/* ---------- version + where it's running (for troubleshooting) ---------- */
+const INKY_VERSION = 'version 10 · Nov 25';
+function renderVer(where) { $('verNote').textContent = `inky-bot ${INKY_VERSION} · running in: ${where}`; }
+renderVer(window.claude ? 'Claude (checking…)' : 'a web browser (no chat or desktop features)');
+
 /* ---------- icons ---------- */
 function svgToPng(svgText, size) {
   return new Promise((resolve, reject) => {
@@ -2224,6 +2242,7 @@ async function goFloat() {
   if (!window.claude) return;
   desktop = await claude.use('desktop').catch(() => null);
   if (!desktop?.window) {
+    renderVer('the Claude window (not the installed app: dragging spins Inky here, and it can\'t float)');
     const st = await desktop?.install?.state().catch(() => 'unavailable');
     const note = $('setupNote'); note.classList.remove('hidden');
     if (st === 'installed') note.textContent = 'install status: already installed on this computer ✓ open inky-bot from your Dock, Launchpad or Applications.';
@@ -2237,6 +2256,9 @@ async function goFloat() {
     return;
   }
   document.body.classList.add('app');
+  renderVer('the installed desktop app ✓');
+  $('menuPrefRow').classList.remove('hidden'); $('menuPrefSel').value = menuPref;
+  $('menuPrefSel').onchange = () => { menuPref = $('menuPrefSel').value; store.set('menuPref', menuPref); fitWindow(); };
   $('moveRow').classList.remove('hidden');
   if (desktop.childProcess) { $('findBotsRow').classList.remove('hidden'); renderSpot(); findLocalBots(true); }
   setTimeout(() => {   // Claude's own voice isn't offered in this window: use the Mac's instead

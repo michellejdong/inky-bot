@@ -46,7 +46,7 @@ There are two versions of Inky. They have the same features and differ only in h
 | **☾ Sleep routine** | One tap starts sleepy music and dark mode, and Inky puts on its nightcap. It walks you through dimming the lights, drinking water, laying out tomorrow's clothes and brushing your teeth, then a short **sleep journal** (a good thing about today, what's on your mind, the first thing tomorrow). Then "goodnight": the music fades after 15, 30 or 60 minutes. |
 | **Time of day** | A dew drop in the morning, sunglasses in the afternoon, a scarf in the evening. Dark mode with stars starts after sunset. You can also choose a look or force light or dark mode. |
 | **Spotify** | Buttons open matching music in Spotify, and you can save your own playlist. In the Mac desktop app with full access, Inky controls the Spotify app itself: play, pause, skip, see what's playing, and start your playlist when a session begins. |
-| **Smart placement** *(desktop app)* | Drag Inky anywhere, right into the corners, or jump to a corner or the center. Inky stays exactly where you put it. The menus open above it if there's room, otherwise below, otherwise beside it (left or right), and shift sideways near screen edges. They slide in smoothly, re-check when you move Inky, and fade gently if the side changes. |
+| **Smart placement** *(desktop app)* | Drag Inky anywhere, right into the corners, or jump to a corner or the center. Inky stays exactly where you put it. The menus open beside it, on its left or right (whichever has more room), or above/below if there's no space beside it. You can switch to above/below under **more → menus open**. They slide in smoothly, re-check when you move Inky, and fade gently if the side changes. |
 
 All built-in music is generated live in the page with the Web Audio API, so there are no audio files.
 
@@ -135,8 +135,9 @@ You can also host it for free on [GitHub Pages](#host-it-on-github-pages).
 - Type `idea: buy plant food` in the chat box to save an idea instantly.
 - Tap a suggestion button under Inky's reply to continue the conversation.
 - Pick the model (quick, balanced, deep, Haiku, Sonnet or Opus) with the small menu at the left of the chat box.
-- The menus open **above** Inky when there's room, otherwise **below**, otherwise **beside** it (left or right). Near the screen edges they shift sideways so nothing gets cut off. Inky itself never moves when they open.
-- When folded, the window hugs Inky, so you can tuck it right into a corner of your screen.
+- The menus open **beside** Inky (left or right, whichever has more room) by default. Prefer above/below? Change **more → menus open**. Inky itself never moves when they open.
+- When folded, the window hugs Inky, so you can tuck it right against any edge or into a corner of your screen, even over the Dock.
+- **more** shows the version and where Inky is running, which is handy for troubleshooting.
 
 ---
 
