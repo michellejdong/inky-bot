@@ -19,11 +19,10 @@
   body.float { background: transparent; }
   #stage { width: 260px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; }
   body.app #stage { -webkit-app-region: drag; app-region: drag; padding: 34px 0 10px; }
-  body.float { place-items: end center; }
+  body.app { display: block; } body.app #stage { margin: 0 auto; }
   body.float #stage { padding: 8px 0 6px; }
   #panel { order: 1 } #nav { order: 2 } #chat { order: 3 } #suggest { order: 4 } #timerTag { order: 5 } #bubble { order: 6 } #tail { order: 7 } #petWrap { order: 8 } #patHint { order: 9 } #grip { order: 10 }
   /* opening downward when inky sits near the top of the screen */
-  body.float.down { place-items: start center; }
   body.down #grip { order: -2 } body.down #timerTag { order: -1 } body.down #petWrap { order: 0 } body.down #patHint { order: 1 }
   body.down #tail { order: 2; border-top-color: transparent; border-bottom-color: #fff; margin: 0 0 -6px; }
   body.dark.down #tail { border-bottom-color: #2d3250; }
@@ -105,6 +104,12 @@
   .nb { border: none; background: transparent; font: inherit; font-size: 11px; font-weight: 800; color: var(--soft); padding: 5px 0; border-radius: 999px; cursor: pointer; text-decoration: none; white-space: nowrap; text-align: center; }
   .nb:hover { color: var(--accent); }
   .nb.on { background: var(--accent); color: #fff; }
+  #nav { position: relative; }
+  #foldBtn { position: absolute; top: -9px; right: -9px; width: 22px; height: 22px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--accent); color: #fff; font: inherit; font-size: 15px; font-weight: 800; line-height: 1; padding: 0 0 2px;
+    box-shadow: 0 2px 6px rgba(150,80,60,.3); z-index: 2; display: grid; place-items: center; }
+  #foldBtn:hover { transform: scale(1.1); }
+  body.down #foldBtn { top: auto; bottom: -9px; }
   #wakeNav { color: #E0A21B; } #wakeNav.on { background: #F2B53A; color: #fff; }
   #sleepNav { color: #7B83D4; } #sleepNav.on { background: #7B83D4; color: #fff; }
   .hidden { display: none !important; }
@@ -474,7 +479,7 @@
       <div class="row setrow hidden" id="voiceRow" style="margin-top:10px"><span class="lbl">inky's voice</span>
         <select class="mini sel" id="voiceSel" style="width:96px"><option value="airy">airy</option><option value="buttery">buttery</option><option value="glassy">glassy</option><option value="rounded">rounded</option></select>
         <button class="btn ghost" id="voiceTest" type="button">test</button></div>
-      <p class="muted" id="setupNote" style="margin:8px 0 0">Drag Inky to move it, scroll over it (or Shift+drag) to spin it, double-click to fold it back. Shortcut once set up: ⌥⇧I to summon Inky. ⌘Q quits.</p>
+      <p class="muted" id="setupNote" style="margin:8px 0 0">Drag Inky to move it, scroll over it (or Shift+drag) to spin it. Fold it back with a double-click, the – button or Esc. Shortcut once set up: ⌥⇧I to summon Inky. ⌘Q quits.</p>
     </div>
   </div>
 
@@ -493,6 +498,7 @@
   </form>
 
   <nav id="nav" class="card">
+    <button id="foldBtn" type="button" title="fold (or double-click Inky, or press Esc)">–</button>
     <button class="nb" data-tab="quick" type="button">quick</button>
     <button class="nb" data-tab="focus" type="button">focus</button>
     <button class="nb" data-tab="tasks" type="button">tasks</button>
@@ -524,23 +530,47 @@ const store = {
 
 /* ---------- folding: just inky until you pat it ---------- */
 let folded = true, lastUI = Date.now(), fitT, openDown = false;
-// open the menus downward when inky sits in the top part of the screen, upward otherwise
-async function updateDirection() {
-  if (!desktop?.window || !document.body.classList.contains('float')) return;
+// Inky's spot on the screen (top-center of Inky, in screen pixels). The window is laid out around it,
+// so Inky never jumps, and the menus open toward whichever side has room.
+let anchor = null, area = null;
+async function screenArea(x, y) {
+  let a = { x: screen.availLeft || 0, y: screen.availTop || 0, width: screen.availWidth, height: screen.availHeight };
   try {
-    const b = await desktop.window.getBounds();
-    let area = { y: screen.availTop || 0, height: screen.availHeight };
-    try {
-      const ds = await desktop.screen.getAllDisplays(), cx = b.x + b.width / 2, cy = b.y + b.height / 2;
-      const d = ds.find(d => cx >= d.bounds.x && cx < d.bounds.x + d.bounds.width && cy >= d.bounds.y && cy < d.bounds.y + d.bounds.height);
-      if (d) area = d.workArea;
-    } catch {}
-    const inkyY = openDown ? b.y + 110 : b.y + b.height - 110;
-    const down = inkyY < area.y + area.height * .45;
-    if (down !== openDown) { openDown = down; document.body.classList.toggle('down', down); fitWindow(); }
+    const ds = await desktop.screen.getAllDisplays();
+    const d = ds.find(d => x >= d.bounds.x && x < d.bounds.x + d.bounds.width && y >= d.bounds.y && y < d.bounds.y + d.bounds.height);
+    if (d) a = d.workArea;
   } catch {}
+  return a;
 }
-setInterval(() => { if (folded) updateDirection(); }, 1500);
+async function readAnchor() {
+  const b = await desktop.window.getBounds(), r = $('petWrap').getBoundingClientRect();
+  anchor = { x: Math.round(b.x + r.left + r.width / 2), y: Math.round(b.y + r.top) };
+  area = await screenArea(anchor.x, anchor.y);
+}
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+let laying = false, layAgain = false;
+async function layout() {
+  if (!desktop?.window || !document.body.classList.contains('app') || mv.on) return;
+  if (laying) { layAgain = true; return; }
+  laying = true;
+  try {
+    if (!anchor) await readAnchor();
+    if (!area) area = await screenArea(anchor.x, anchor.y);
+    const petH = $('petWrap').offsetHeight, stageH = $('stage').getBoundingClientRect().height;
+    const need = folded ? 0 : Math.max(0, stageH - petH - 40);          // height of the open menus
+    const above = anchor.y - area.y, below = area.y + area.height - (anchor.y + petH);
+    const down = !folded && need > above && below > above;              // prefer opening upward; go down only if that has more room
+    if (down !== openDown) { openDown = down; document.body.classList.toggle('down', down); await nextFrame(); }
+    const r = $('petWrap').getBoundingClientRect(), st = $('stage').getBoundingClientRect();
+    const W = FLOAT.width, H = Math.ceil(st.bottom) + 8;
+    let x = Math.round(anchor.x - (r.left + r.width / 2)), y = Math.round(anchor.y - r.top);
+    x = Math.min(Math.max(x, area.x), area.x + area.width - W);           // keep the whole window on screen
+    y = Math.min(Math.max(y, area.y), area.y + area.height - H);
+    await desktop.window.setBounds({ x, y, width: W, height: H });
+  } catch (e) { console.warn(e); }
+  laying = false;
+  if (layAgain) { layAgain = false; fitWindow(); }
+}
 function setFolded(f) {
   if (folded === f) return;
   folded = f; document.body.classList.toggle('folded', f);
@@ -548,14 +578,7 @@ function setFolded(f) {
   fitWindow();
 }
 function unfold() { setFolded(false); lastUI = Date.now(); }
-function fitWindow() {
-  clearTimeout(fitT);
-  fitT = setTimeout(() => {
-    if (!desktop?.window || !document.body.classList.contains('app')) return;
-    const h = Math.ceil($('stage').getBoundingClientRect().height) + 14;
-    desktop.window.place({ pin: openDown ? 'top_left' : 'bottom_left', width: FLOAT.width, height: Math.max(220, h) }).catch(() => {});
-  }, 60);
-}
+function fitWindow() { clearTimeout(fitT); fitT = setTimeout(layout, 40); }
 ['pointerdown', 'keydown', 'input', 'wheel', 'pointermove'].forEach(ev => $('stage').addEventListener(ev, () => { if (!folded) lastUI = Date.now(); }, true));
 setInterval(() => {
   const listening = typeof dict !== 'undefined' && dict && dict.active();
@@ -679,13 +702,23 @@ function pet() {
   settleMood(r === DIZZY || r === MEGA ? 3500 : 2600);
 }
 let suppressClick = false;
-$('petWrap').addEventListener('click', () => { if (suppressClick) { suppressClick = false; return; } pet(); });
-$('petWrap').addEventListener('dblclick', (e) => {
-  e.preventDefault();
-  if (spin.moved || mv.moved) return;
+let clk = { t: 0, x: 0, y: 0 };
+function foldNow() {
   clearTimeout(moodTimer);
-  setTimeout(() => { setFolded(true); if (!busy && !sleep.running && !calm.running) { setMood('happy'); } }, 150);
+  setFolded(true);
+  if (!busy && !sleep.running && !calm.running && !morn.running) setMood('happy');
+}
+$('petWrap').addEventListener('click', (e) => {
+  if (suppressClick) { suppressClick = false; return; }
+  const now = performance.now();
+  // two clicks close together in time and on screen = fold (screen coords stay put even when the window resizes)
+  if (now - clk.t < 420 && Math.hypot(e.screenX - clk.x, e.screenY - clk.y) < 14) {
+    clk.t = 0; foldNow(); return;
+  }
+  clk = { t: now, x: e.screenX, y: e.screenY };
+  pet();
 });
+$('petWrap').addEventListener('dblclick', (e) => e.preventDefault());
 
 /* ---------- spin by dragging ---------- */
 const spin = { ry: 0, rx: 0, vy: 0, vx: 0, drag: false, moved: false, lx: 0, ly: 0, lt: 0, travel: 0, shown: '' };
@@ -700,7 +733,7 @@ function startMove(e, el) {
 function doMove(e) {
   if (!mv.on) return false;
   const dx = e.screenX - mv.sx, dy = e.screenY - mv.sy;
-  if (!mv.moved && Math.abs(dx) + Math.abs(dy) > 4) { mv.moved = true; document.body.classList.add('moving'); }
+  if (!mv.moved && Math.abs(dx) + Math.abs(dy) > 7) { mv.moved = true; document.body.classList.add('moving'); }
   if (!mv.moved || !mv.ready) return true;
   mv.nx = Math.round(mv.bx + dx); mv.ny = Math.round(mv.by + dy);
   if (!mv.raf) mv.raf = requestAnimationFrame(() => { mv.raf = 0; desktop.window.setBounds({ x: mv.nx, y: mv.ny }).catch(() => {}); });
@@ -711,8 +744,7 @@ function endMove() {
   mv.on = false; document.body.classList.remove('moving');
   if (mv.moved) {
     suppressClick = true; setTimeout(() => { suppressClick = false; }, 50);
-    setTimeout(() => desktop.window.getBounds().then((b) => store.set('spot', { x: b.x, y: b.y })).catch(() => {}), 120);
-    setTimeout(updateDirection, 200);
+    setTimeout(() => readAnchor().then(() => { store.set('anchor', anchor); layout(); }).catch(() => {}), 120);
     if (!busy && !sleep.running && !calm.running) { setMood('happy'); if (!folded) showExchange('', pick(['wheee, new spot!', 'ooh, nice view from here~', 'i like it here!'])); settleMood(2000); }
   }
   return true;
@@ -736,7 +768,7 @@ $('petWrap').addEventListener('pointermove', (e) => {
   if (!spin.drag) return;
   const dx = e.clientX - spin.lx, dy = e.clientY - spin.ly, now = performance.now(), dt = Math.max(8, now - spin.lt);
   spin.start += Math.abs(dx) + Math.abs(dy);
-  if (!spin.moved && spin.start > 6) { spin.moved = true; spin.travel = 0; $('petWrap').classList.add('grabbing'); }
+  if (!spin.moved && spin.start > 8) { spin.moved = true; spin.travel = 0; $('petWrap').classList.add('grabbing'); }
   if (!spin.moved) return;
   spin.ry += dx * 1.4; spin.rx -= dy * 1.4; spin.travel += Math.abs(dx * 1.4) + Math.abs(dy * 1.4);
   spin.vy = dx * 1.4 / dt * 16; spin.vx = -dy * 1.4 / dt * 16;
@@ -1035,6 +1067,10 @@ function renderSpot() {
     box.textContent = '';
     const lab = document.createElement('span'); lab.className = 'lab'; lab.textContent = 'Spotify:'; box.appendChild(lab);
     const add = (label, href) => { const a = document.createElement('a'); a.className = 'chip'; a.textContent = label; a.href = href; a.target = '_blank'; a.rel = 'noopener'; box.appendChild(a); };
+    if (typeof desktop !== 'undefined' && desktop?.childProcess && typeof spotifyLocal !== 'undefined' && !spotifyLocal) {
+      const c = document.createElement('button'); c.type = 'button'; c.className = 'chip go';
+      c.textContent = store.get('spotifyConnected', false) ? 'reconnect Spotify app' : 'connect Spotify app'; c.onclick = connectSpotify; box.appendChild(c);
+    }
     if (mine) add('my playlist ↗', mine);
     SPOT[box.dataset.spot].forEach(([label, q]) => add(label + ' ↗', 'https://open.spotify.com/search/' + encodeURIComponent(q)));
     if (typeof spotifyLocal !== 'undefined' && spotifyLocal) {
@@ -1081,8 +1117,27 @@ function renderSpk() {
   b.title = speaking ? 'stop talking' : settings.voiceOn ? 'voice replies: on (tap to turn off)' : 'voice replies: off (tap to turn on)';
   octo.classList.toggle('talking', speaking);
 }
+let sayProc = null;
+const canSayLocal = () => !tts && !!desktop?.childProcess;
+async function speakLocal(text) {
+  try {
+    if (await desktop.permissions.state('full-access') !== 'granted') {
+      const r = await desktop.permissions.request(['full-access']);
+      if (r['full-access'] !== 'granted') { showExchange('', "i need full access to use your Mac's voice~"); settings.voiceOn = false; saveSettings(); renderSpk(); return; }
+    }
+    stopLocalSay();
+    const p = desktop.childProcess.spawn('/usr/bin/say', ['-r', '185']);
+    sayProc = p; speaking = true; renderSpk();
+    const done = () => { if (sayProc === p) { sayProc = null; speaking = false; renderSpk(); } };
+    p.on('close', done); p.on('error', done);
+    p.stdin.write(text.slice(0, 2000)).then(() => p.stdin.end()).catch(done);
+  } catch (e) { speaking = false; renderSpk(); }
+}
+function stopLocalSay() { if (sayProc) { sayProc.kill().catch(() => {}); sayProc = null; speaking = false; renderSpk(); } }
 function speakText(text, force) {
-  if (!tts || !(settings.voiceOn || force) || !text) return;
+  if (!(settings.voiceOn || force) || !text) return;
+  if (canSayLocal()) { speakLocal(text); return; }
+  if (!tts) return;
   tts.speak(text.slice(0, 2000), { voice: settings.voice }).catch((e) => {
     if (e && (e.code === 'not_granted' || e.code === 'unavailable')) {
       settings.voiceOn = false; saveSettings(); $('spk').classList.add('hidden'); $('voiceRow').classList.add('hidden'); $('bubble').classList.remove('hasSpk');
@@ -1090,8 +1145,8 @@ function speakText(text, force) {
   });
 }
 $('spk').onclick = () => {
-  if (!tts) return;
-  if (speaking) { tts.stop().catch(() => {}); return; }
+  if (!tts && !canSayLocal()) return;
+  if (speaking) { if (sayProc) stopLocalSay(); else tts.stop().catch(() => {}); return; }
   settings.voiceOn = !settings.voiceOn; saveSettings(); renderSpk();
   if (settings.voiceOn) speakText($('say').textContent);
 };
@@ -1107,7 +1162,15 @@ function micDone() {
   if (micTarget === 'ideaNew') saveIdea(v); else ask(v);
 }
 function micClick(target) {
-  if (!dict) return;
+  if (!dict) {
+    if (!desktop?.window) return;
+    const el = $(target); el.focus();
+    setMood('surprised');
+    showExchange('', "i'm listening~ press your Mac's dictation key (🎤, or Fn twice) and talk. then tap send!");
+    $(target === 'msg' ? 'mic' : 'ideaMic').classList.add('on');
+    setTimeout(() => $(target === 'msg' ? 'mic' : 'ideaMic').classList.remove('on'), 4000);
+    return;
+  }
   if (dict.active()) { dict.stop().then(micDone).catch(() => {}); return; }
   micTarget = target;
   micBase = $(micTarget).value;
@@ -1634,15 +1697,26 @@ function sh(cmd, input, timeoutMs = 180000) {
     if (input != null) p.stdin.write(input).then(() => p.stdin.end()).catch(() => {});
   });
 }
-async function findLocalBots(quiet) {
+async function connectSpotify() {
+  if (!desktop?.childProcess) return;
+  await findLocalBots(false, true);
+  if (spotifyLocal) {
+    store.set('spotifyConnected', true);
+    setMood('excited'); showExchange('', "Spotify connected! the music buttons now control your Spotify app. i'll remember this~");
+    spotify.cmd('activate').catch(() => {}); settleMood(4000);
+  } else if (await desktop.permissions.state('full-access').catch(() => '') === 'granted') {
+    setMood('thinking'); showExchange('', "i couldn't find the Spotify app in Applications. install Spotify for Mac and tap connect again~");
+  }
+}
+async function findLocalBots(quiet, forSpotify) {
   if (!desktop?.childProcess) return;
   const st = await desktop.permissions.state('full-access').catch(() => 'unavailable');
   if (st !== 'granted') {
     if (quiet) return;
     const r = await desktop.permissions.request(['full-access']).catch(() => ({}));
-    if (r['full-access'] !== 'granted') { setMood('sad'); showExchange('', "okay! without full access i can only hand off on the web, and open Spotify by link~"); return; }
+    if (r['full-access'] !== 'granted') { setMood('sad'); showExchange('', forSpotify ? "okay! without full access i can only open Spotify by link~" : "okay! without full access i can only hand off on the web, and open Spotify by link~"); return; }
   }
-  if (!quiet) { setMood('thinking'); showExchange('', 'looking around your Mac for bot friends…'); }
+  if (!quiet) { setMood('thinking'); showExchange('', forSpotify ? 'looking for your Spotify app…' : 'looking around your Mac for bot friends…'); }
   const r = await sh('for b in claude codex gemini ollama; do command -v $b >/dev/null 2>&1 && echo $b; done; [ -d /Applications/ChatGPT.app ] && echo chatgptapp; [ -d /Applications/Spotify.app ] && echo spotifyapp; command -v ollama >/dev/null 2>&1 && ollama list 2>/dev/null | awk \'NR==2{print "model:"$1}\'', null, 20000);
   const lines = r.out.split('\n').map(s => s.trim()).filter(Boolean);
   const model = (lines.find(l => l.startsWith('model:')) || '').slice(6);
@@ -1657,7 +1731,7 @@ async function findLocalBots(quiet) {
   });
   spotifyLocal = lines.includes('spotifyapp'); renderSpot();
   const names = Object.values(LOCAL).map(b => b.name).concat(spotifyLocal ? ['Spotify'] : []);
-  if (!quiet) { setMood(names.length ? 'excited' : 'neutral'); showExchange('', names.length ? `found: ${names.join(', ')}! pick one in the list~` : "i couldn't find any bots i know how to talk to (Claude Code, Codex CLI, Gemini CLI, Ollama or the ChatGPT app)."); settleMood(4000); }
+  if (!quiet && !forSpotify) { setMood(names.length ? 'excited' : 'neutral'); showExchange('', names.length ? `found: ${names.join(', ')}! pick one in the list~` : "i couldn't find any bots i know how to talk to (Claude Code, Codex CLI, Gemini CLI, Ollama or the ChatGPT app)."); settleMood(4000); }
   syncBotBtn();
 }
 async function askLocal(key) {
@@ -1696,9 +1770,9 @@ async function askLocal(key) {
 $('findBots').onclick = () => findLocalBots(false);
 
 /* ---------- move around the screen ---------- */
-function moveTo(anchor) {
+function moveTo(corner) {
   if (!desktop?.window) return;
-  desktop.window.place({ anchor, margin: 20 }).catch(() => {});
+  desktop.window.place({ anchor: corner, margin: 20 }).then(() => readAnchor()).then(() => { store.set('anchor', anchor); layout(); }).catch(() => {});
 }
 document.querySelectorAll('[data-place]').forEach(b => b.onclick = () => moveTo(b.dataset.place));
 
@@ -2042,6 +2116,7 @@ async function setTray() {
       toolTip: 'your octopus buddy',
       menu: [
         { label: 'Talk to Inky', click: summon },
+        { label: 'Fold Inky', click: () => foldNow() },
         { label: 'Quick instructions', submenu: quickItems.length ? quickItems : [{ label: '(none yet)', enabled: false }] },
         { type: 'separator' },
         focus.running
@@ -2085,9 +2160,13 @@ async function goFloat() {
     setIgnore(true);
     new ResizeObserver(fitWindow).observe($('stage')); fitWindow();
     desktop.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }).catch(() => {});
-    const spot = store.get('spot', null);
-    if (spot) await desktop.window.setBounds({ x: spot.x, y: spot.y }).catch(() => {});
-    else if (!store.get('placed', false)) { await desktop.window.place({ anchor: 'bottom_right', margin: 20 }).catch(() => {}); store.set('placed', true); }
+    const saved = store.get('anchor', null);
+    if (saved) { anchor = saved; area = await screenArea(anchor.x, anchor.y); }
+    else {
+      await desktop.window.place({ anchor: 'bottom_right', margin: 20 }).catch(() => {});
+      await nextFrame(); await readAnchor().catch(() => {}); if (anchor) store.set('anchor', anchor);
+    }
+    layout();
   } catch (e) { console.warn(e); }
 }
 
@@ -2096,17 +2175,26 @@ async function goFloat() {
   desktop = await claude.use('desktop').catch(() => null);
   if (!desktop?.window) {
     const st = await desktop?.install?.state().catch(() => 'unavailable');
+    const note = $('setupNote'); note.classList.remove('hidden');
+    if (st === 'installed') note.textContent = 'install status: already installed on this computer ✓ open inky-bot from your Dock, Launchpad or Applications.';
+    else if (st !== 'available') note.textContent = 'install status: not available here. Installing works only in the Claude desktop app\'s main window (beside a chat or on the artifact\'s full page), in an up-to-date app, and when your organization allows desktop apps.';
+    else note.textContent = 'install status: ready to install ✓';
     if (st === 'available') {
       $('installBtn').classList.remove('hidden');
       $('installBtn').onclick = async () => { const r = await desktop.install.request().catch(() => 'failed'); if (r === 'installed') showExchange('', 'yay! find me in your apps~'); };
       showExchange('', "hi hi! i'm inky~ tap ⋯ below to put me on your desktop.");
     }
-    $('setupNote').classList.add('hidden');
     return;
   }
   document.body.classList.add('app');
   $('moveRow').classList.remove('hidden');
-  if (desktop.childProcess) { $('findBotsRow').classList.remove('hidden'); findLocalBots(true); }
+  if (desktop.childProcess) { $('findBotsRow').classList.remove('hidden'); renderSpot(); findLocalBots(true); }
+  setTimeout(() => {   // Claude's own voice isn't offered in this window: use the Mac's instead
+    if (!dict) { $('mic').classList.remove('hidden'); $('ideaMic').classList.remove('hidden'); }
+    if (!tts && desktop.childProcess) {
+      $('spk').classList.remove('hidden'); $('bubble').classList.add('hasSpk'); renderSpk();
+    }
+  }, 1500);
   appIcon().then(png => desktop.app.dock.setIcon(png)).catch(() => {});
   const st = await desktop.permissions.state().catch(() => ({}));
   await enableExtras(st);
@@ -2134,6 +2222,12 @@ async function goFloat() {
   }
 })();
 $('hideBtn').onclick = () => desktop?.window.hide().catch(() => {});
+$('foldBtn').onclick = (e) => { e.stopPropagation(); foldNow(); };
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || folded || speaking) return;   // while Inky is talking, Esc stops the talking instead
+  if (e.target instanceof Element && e.target.closest('input, textarea, select')) { e.target.blur(); return; }
+  e.preventDefault(); foldNow();
+});
 /* ---------- 3D Inky (three.js) ---------- */
 var o3 = null;
 function makeOcto3D() {

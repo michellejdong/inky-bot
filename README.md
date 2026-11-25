@@ -32,9 +32,9 @@ There are two versions of Inky. They have the same features and differ only in h
 |---|---|
 | **3D Inky** | A real 3D octopus with eight curly tentacles. Spin it any direction by scrolling over it or Shift+dragging (it has spots on its back). Its eyes follow your cursor, and it blinks and breathes. |
 | **Lively reactions** | About a dozen different reactions when you pat it (jumps, flips, spins, dances, rainbow shimmer, an ink puff…), never the same one twice in a row. Click fast and it gets dizzy. There are rare surprises too: its sprout blooms, or it turns gold. |
-| **Tidy by default** | Usually it's just Inky. Pat it and the menus appear. They fold away after about 25 seconds without use, or when you double-click Inky. |
+| **Tidy by default** | Usually it's just Inky. Pat it and the menus appear. Fold them with a double-click on Inky, the **–** button on the menu, or **Esc**. They also fold on their own after about 25 seconds without use. |
 | **Chat** *(in Claude)* | Ask Inky anything. Its face changes with the mood of its answer, and quick-reply buttons help you keep going. Choose a model: quick, balanced, deep, Haiku 4.5, Sonnet 5.5 or Opus 5.5. |
-| **Voice** *(in Claude)* | Talk with the mic button. Turn on the speaker button to hear Inky's replies, and choose its voice under **more**. |
+| **Voice** | Talk with the mic button, and turn on the speaker button to hear Inky's replies. In Claude's main window and Chrome this uses Claude's voices. In the floating desktop app, Inky uses your Mac's built-in voice and dictation (🎤 key, or Fn twice). |
 | **Quick instructions** | One-tap prompts like "help me plan my next hour". Add or remove your own. |
 | **Hand off to other bots** | Inky writes a prompt for Claude (the default), Codex, ChatGPT or Gemini, which you copy and open. In the desktop app with full access, it can also talk directly to Claude Code, Codex CLI, Gemini CLI or Ollama on your Mac and show you their replies, or open the ChatGPT app. |
 | **Focus timer** | 15, 25 or 50 minute sessions plus breaks, with a session count for the day. The time left shows on the Dock icon and in the menu bar. Focus music: lo-fi beats, sunny beats, lo-fi chill, lo-fi + rain, warm piano, brown noise, rain, ocean, forest, fireplace, pads, space drift, or your Spotify. |
@@ -46,7 +46,7 @@ There are two versions of Inky. They have the same features and differ only in h
 | **☾ Sleep routine** | One tap starts sleepy music and dark mode, and Inky puts on its nightcap. It walks you through dimming the lights, drinking water, laying out tomorrow's clothes and brushing your teeth, then a short **sleep journal** (a good thing about today, what's on your mind, the first thing tomorrow). Then "goodnight": the music fades after 15, 30 or 60 minutes. |
 | **Time of day** | A dew drop in the morning, sunglasses in the afternoon, a scarf in the evening. Dark mode with stars starts after sunset. You can also choose a look or force light or dark mode. |
 | **Spotify** | Buttons open matching music in Spotify, and you can save your own playlist. In the Mac desktop app with full access, Inky controls the Spotify app itself: play, pause, skip, see what's playing, and start your playlist when a session begins. |
-| **Smart placement** *(desktop app)* | Move Inky anywhere, or jump to a corner or the center. The menus open upward or downward depending on where Inky sits on your screen. |
+| **Smart placement** *(desktop app)* | Drag Inky anywhere, or jump to a corner or the center. Inky stays exactly where you put it, and the menus open toward whichever side has room. It re-checks when you move Inky, even while the menus are open. |
 
 All built-in music is generated live in the page with the Web Audio API, so there are no audio files.
 
@@ -82,7 +82,7 @@ You need a [Claude](https://claude.ai) account and the **Claude desktop app** (m
    - The window disappears, and from then on Inky always starts as just itself on your desktop, with no frame and no background.
    - If Inky says *"almost! quit me (cmd+q) and open me again"*, press **⌘Q** and open it again.
 5. **Put it anywhere.** Just drag Inky. It remembers its spot next time. You can also use **more → move inky** (↖ ↗ ◎ ↙ ↘) or the menu bar icon's **Move Inky to**.
-6. *(Optional)* **Bots on your Mac and Spotify:** tap **quick → find bots on my Mac** and allow **full access**. The first time Inky controls Spotify, macOS asks whether it may; click **OK**.
+6. *(Optional)* **Spotify, voice and bots on your Mac:** tap **connect Spotify app** (in focus, calm, wake or sleep) or **quick → find bots on my Mac**, and allow **full access**. macOS asks once whether Inky may control Spotify; click **OK**. You only connect once: Inky reconnects automatically each time it opens. After an update, it may ask once more.
 7. *(Optional)* **Start at login:** System Settings → General → Login Items → add Inky.
 
 ### B. In a web browser (no account needed)
@@ -107,7 +107,7 @@ You can also host it for free on [GitHub Pages](#host-it-on-github-pages).
 | **Click** Inky | Pat it and open the menus |
 | **Drag** Inky | Move it anywhere on your screen *(desktop app; in a browser, dragging spins it)* |
 | **Scroll** over Inky, or **Shift+drag** | Spin it around in 3D |
-| **Double-click** Inky | Fold everything back to just Inky |
+| **Double-click** Inky, the **–** button, or **Esc** | Fold everything back to just Inky |
 | Drag the **• • • drag me • • •** handle (appears on hover) | Also moves Inky |
 | **⌥⇧I** (Option+Shift+I) | Bring Inky up from anywhere *(desktop app)* |
 | **Menu bar icon** | Talk, quick instructions, focus, break, morning and sleep routines, meditate, tasks, ideas, move, open Claude, pat, hide/show |
@@ -135,7 +135,7 @@ You can also host it for free on [GitHub Pages](#host-it-on-github-pages).
 - Type `idea: buy plant food` in the chat box to save an idea instantly.
 - Tap a suggestion button under Inky's reply to continue the conversation.
 - Pick the model (quick, balanced, deep, Haiku, Sonnet or Opus) with the small menu at the left of the chat box.
-- The menus open **upward** when Inky sits low on the screen and **downward** when it sits high.
+- The menus open **upward** when there's room above Inky and **downward** otherwise. Inky itself never moves when they open.
 
 ---
 
@@ -168,11 +168,11 @@ Codex runs with `--sandbox read-only`. Messages reach the command-line bots thro
 | No "install" button | Open the artifact in the **Claude desktop app** (not a web browser). Or use **Install as app** in the artifact's menu. |
 | Inky says *"quit me and open me again"* | Press **⌘Q** and reopen the app. |
 | Inky can't chat (*"i can't talk from here"*) | You're using the browser version, or the artifact wasn't published with the `sample` capability. See [Install](#install). |
-| No mic or speaker buttons | Voice isn't available in this window. Use Claude's main window or Chrome, or just type. |
+| No mic or speaker buttons | Quit and reopen Inky. In the floating app, voice uses your Mac's dictation and voice, and speaking needs full access. |
 | A permission was denied | **more → permissions** to turn it back on |
 | Inky looks flat (2D) | The 3D library couldn't load. Check your internet connection and reopen. |
 | Codex or another bot errors | Make sure it works in Terminal first (for example `codex exec "hi"`). Inky shows the bot's own error message. |
-| Spotify buttons open the web | Tap **quick → find bots on my Mac** and allow full access in the desktop app. |
+| Spotify buttons open the web | Tap **connect Spotify app** and allow full access in the desktop app. Spotify for Mac must be installed. |
 | Wrong sunset time | Edit `LOC` in `index.html` (see [Customize](#customize)). |
 
 ## Customize
