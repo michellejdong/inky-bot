@@ -73,11 +73,11 @@ You need a [Claude](https://claude.ai) account and the **Claude desktop app** (m
    1. Download `index.html` from this repo.
    2. In the Claude desktop app, start a new chat and attach `index.html`.
    3. Send this message:
-      > Publish this file as an artifact titled "inky-bot", and declare the `desktop`, `sample`, `dictation` and `tts` capabilities.
+      > Publish this file as an artifact titled "Inky", and declare the `desktop`, `sample`, `dictation` and `tts` capabilities.
    4. Claude replies with a link to your new artifact. Open it.
    - *Already have a link?* If someone shared their Inky artifact with you, open that link in the Claude desktop app and skip ahead. Some features are limited for shared copies (see [Good to know](#good-to-know)).
 2. **Install it as an app:** pat Inky, tap **more → install inky as a desktop app**, and confirm. You can also use **Install as app** in the artifact's menu.
-3. **Open the app.** Inky opens with its own octopus icon in the Dock.
+3. **Open the app.** It's called **Inky** and has its own octopus icon in the Dock.
 4. **Allow it to float.** On first launch, Inky right away asks to float, sit in the menu bar, send notifications and use a shortcut. Click **Allow**. If you missed the dialog, pat Inky once to ask again.
    - The window disappears, and from then on Inky always starts as just itself on your desktop, with no frame and no background.
    - If Inky says *"almost! quit me (cmd+q) and open me again"*, press **⌘Q** and open it again.
@@ -111,7 +111,8 @@ You can also host it for free on [GitHub Pages](#host-it-on-github-pages).
 | Drag the **• • • drag me • • •** handle (appears on hover) | Also moves Inky |
 | **⌥⇧I** (Option+Shift+I) | Bring Inky up from anywhere *(desktop app)* |
 | **Menu bar icon** | Talk, quick instructions, focus, break, morning and sleep routines, meditate, tasks, ideas, move, open Claude, pat, hide/show |
-| **⌘Q** | Quit *(desktop app)* |
+| **⌘R** (or **more → reload**, or the menu bar icon) | Reload Inky to the latest version *(desktop app)* |
+| **⌘Q**, or right-click Inky in the Dock → **Quit** | Quit *(desktop app)* |
 
 - The empty space around Inky is see-through **and** click-through, so you can click whatever is behind it.
 
@@ -160,7 +161,7 @@ Codex runs with `--sandbox read-only`. Messages reach the command-line bots thro
 - **Voice** (mic and spoken replies) only works in Claude's main window and in Chrome, so it may be hidden in the floating desktop app. Typing always works.
 - **Chat and voice** are only offered to people in the artifact owner's Claude organization. Everyone else can still use all the other features.
 - **Full access** (bots on your Mac, Spotify control) is only available for artifacts you own. If you want those features, make your own copy (step 1 of [Install](#install)).
-- **Updates:** if you change `index.html`, ask Claude to republish it to the same artifact. The installed app picks up the new version the next time it opens, and may ask for permissions again.
+- **Updates:** if you change `index.html`, ask Claude to republish it to the same artifact. The installed app switches to the new version on its own at a quiet moment, keeps Inky where it was, and shows a short "I just updated" note. A new version needs one **Allow** again, and Inky asks right away, in a single dialog that also restores Spotify and voice access if you used them.
 - **Data:** tasks, ideas, journal, settings and chat history are saved in the app's or browser's local storage on your computer. Clearing browser data or uninstalling removes them. Use the **copy all** buttons to back them up.
 
 ## Troubleshooting

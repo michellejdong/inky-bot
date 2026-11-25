@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>inky-bot</title>
+<title>Inky</title>
 <script type="application/json" id="claude-artifacts-manifest">{"permissions":["overlay","menu-bar","notifications","shortcuts","full-access"]}</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
@@ -19,6 +19,7 @@
   body.float { background: transparent; }
   #stage { width: 260px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 0; }
   body.app #stage { -webkit-app-region: drag; app-region: drag; padding: 34px 0 10px; }
+  body.app:not(.float) .bubble, body.app:not(.float) #tail { display: none !important; }
   body.app { display: block; } body.app #stage { margin: 0 auto; }
   body.float #stage { padding: 8px 0 6px; }
   #panel { order: 1 } #nav { order: 2 } #chat { order: 3 } #suggest { order: 4 } #timerTag { order: 5 } #bubble { order: 6 } #tail { order: 7 } #petWrap { order: 8 } #patHint { order: 9 } #grip { order: 10 }
@@ -28,7 +29,7 @@
   body.dark.down #tail { border-bottom-color: #2d3250; }
   body.down #bubble { order: 3 } body.down #suggest { order: 4 } body.down #chat { order: 5 } body.down #nav { order: 6 } body.down #panel { order: 7 }
   /* folded: the window hugs Inky so it can sit right in a corner */
-  body.folded.app #stage { width: 180px; padding: 2px 0 !important; }
+  body.folded.app #stage { width: 128px; padding: 0 !important; }
   body.folded.app #grip { display: none !important; }
   /* smooth opening and direction changes */
   #panel, #nav, #chat, #suggest, #bubble, #tail { transition: opacity .16s ease; }
@@ -43,18 +44,18 @@
   @keyframes menuInRight { from { opacity: 0; transform: translateX(-12px) scale(.96); } to { opacity: 1; transform: none; } }
   @keyframes menuInLeft { from { opacity: 0; transform: translateX(12px) scale(.96); } to { opacity: 1; transform: none; } }
   /* menus beside Inky (left or right) when there's no room above or below */
-  body.side #stage { display: grid; width: 432px; grid-template-columns: 170px 250px; column-gap: 12px; row-gap: 6px; align-items: start; justify-items: center; }
+  body.side #stage { display: grid; width: 390px; grid-template-columns: 128px 250px; column-gap: 12px; row-gap: 6px; align-items: start; justify-items: center; }
   body.side #stage > * { grid-column: 2; }
   body.side #petWrap { grid-column: 1; grid-row: 1 / span 20; align-self: center; }
-  body.side.side-left #stage { grid-template-columns: 250px 170px; }
+  body.side.side-left #stage { grid-template-columns: 250px 128px; }
   body.side.side-left #stage > * { grid-column: 1; }
   body.side.side-left #petWrap { grid-column: 2; }
   body.side #tail, body.side #grip, body.side #patHint { display: none !important; }
   /* near the left/right edge of the screen: shift Inky to that side so the menus extend the other way */
   body.hr #petWrap, body.hr #grip { align-self: flex-end; }
-  body.hr #tail { align-self: flex-end; margin-right: 76px; }
+  body.hr #tail { align-self: flex-end; margin-right: 55px; }
   body.hl #petWrap, body.hl #grip { align-self: flex-start; }
-  body.hl #tail { align-self: flex-start; margin-left: 76px; }
+  body.hl #tail { align-self: flex-start; margin-left: 55px; }
   body.folded #panel, body.folded #nav, body.folded #chat, body.folded #suggest, body.folded #bubble, body.folded #tail { display: none !important; }
   body.folded.calm #bubble { display: block !important; } body.folded.calm #tail { display: block !important; }
   #patHint { display: none; font-size: 11px; font-weight: 800; color: #c4927f; margin-top: -6px; }
@@ -76,7 +77,7 @@
   #timerTag { display: none; font-size: 12px; font-weight: 800; color: #fff; background: #7FB77E; padding: 2px 10px; border-radius: 999px; }
   #timerTag.on { display: block; }
 
-  #petWrap { position: relative; width: 170px; height: 170px; cursor: pointer; }
+  #petWrap { position: relative; width: 128px; height: 180px; cursor: pointer; }
   #octo3d { display: none; width: 100%; height: 100%; }
   .has3d #octo3d { display: block; }
   .has3d #octo { display: none; }
@@ -280,7 +281,7 @@
   <div class="bubble card" id="bubble"><button id="spk" class="iconbtn hidden" type="button" title="voice replies: off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none"/><path id="spkWaves" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="spkMute" d="M16 9l6 6M22 9l-6 6"/></svg></button><div id="you"></div><div id="say">hi hi! i'm inky~ talk to me, or give me a pat.</div></div>
   <div id="tail"></div>
   <div id="petWrap" title="click to pat · drag to move · scroll to spin">
-    <canvas id="octo3d" width="340" height="340"></canvas>
+    <canvas id="octo3d" width="256" height="360"></canvas>
     <div id="fx">
       <span data-moods="thinking" class="dot" style="right:22px;top:30px"></span><span data-moods="thinking" class="dot d1" style="right:12px;top:16px;width:12px;height:12px"></span><span data-moods="thinking" class="dot d2" style="right:0;top:0;width:15px;height:15px"></span>
       <span data-moods="sleepy" class="z" style="right:26px;top:34px;font-size:14px">z</span><span data-moods="sleepy" class="z d1" style="right:16px;top:24px;font-size:18px">z</span><span data-moods="sleepy" class="z d2" style="right:4px;top:12px;font-size:22px">Z</span>
@@ -489,12 +490,15 @@
     <!-- more -->
     <div data-panel="more">
       <h4>more</h4>
+      <p class="muted" id="verNote" style="margin:0 0 4px;font-weight:800"></p>
+      <p class="muted" id="setupNote" style="margin:0 0 8px;font-weight:700;color:var(--accent)">Drag Inky to move it, scroll over it (or Shift+drag) to spin it. Fold it back with a double-click, the – button or Esc. Shortcut once set up: ⌥⇧I to summon Inky. ⌘Q quits.</p>
       <div class="chips" style="justify-content:flex-start">
         <a class="chip go" href="https://claude.ai/new" target="_blank" rel="noopener" style="text-decoration:none">open claude ↗</a>
         <button class="chip go hidden" id="installBtn" type="button">install inky as a desktop app</button>
         <button class="chip go hidden" id="setupBtn" type="button">set me up: float + menu bar + alerts</button>
         <button class="chip hidden" id="manageBtn" type="button">permissions</button>
         <button class="chip hidden" id="hideBtn" type="button">tuck away (bring back from menu bar)</button>
+        <button class="chip go" id="reloadBtn" type="button">↻ reload inky (get latest version)</button>
         <button class="chip" id="clearBtn" type="button">fresh chat</button>
       </div>
       <div class="row setrow hidden" id="menuPrefRow" style="margin-top:10px"><span class="lbl">menus open</span>
@@ -509,8 +513,7 @@
       <div class="row setrow hidden" id="voiceRow" style="margin-top:10px"><span class="lbl">inky's voice</span>
         <select class="mini sel" id="voiceSel" style="width:96px"><option value="airy">airy</option><option value="buttery">buttery</option><option value="glassy">glassy</option><option value="rounded">rounded</option></select>
         <button class="btn ghost" id="voiceTest" type="button">test</button></div>
-      <p class="muted" id="verNote" style="margin:8px 0 0;font-weight:800"></p>
-      <p class="muted" id="setupNote" style="margin:8px 0 0">Drag Inky to move it, scroll over it (or Shift+drag) to spin it. Fold it back with a double-click, the – button or Esc. Shortcut once set up: ⌥⇧I to summon Inky. ⌘Q quits.</p>
+
     </div>
   </div>
 
@@ -583,6 +586,7 @@ const nextFrame = () => new Promise(r => requestAnimationFrame(() => requestAnim
 let laying = false, layAgain = false;
 async function layout() {
   if (!desktop?.window || !document.body.classList.contains('app') || mv.on) return;
+  if (typeof clk !== 'undefined' && clk.t && performance.now() - clk.t < 450) { clearTimeout(fitT); fitT = setTimeout(layout, 470 - (performance.now() - clk.t)); return; }
   if (laying) { layAgain = true; return; }
   laying = true;
   try {
@@ -595,7 +599,7 @@ async function layout() {
     const left = anchor.x - area.x, right = area.x + area.width - anchor.x;
     // pick a side: above if it fits, else below, else beside Inky (left/right) if that has room, else the bigger of above/below
     let mode = 'up';
-    const sideRoom = 85 + 12 + 250 + 10;   // half of Inky + gap + menus + margin
+    const sideRoom = 64 + 12 + 250 + 10;   // half of Inky + gap + menus + margin
     if (!folded) {
       if (menuPref === 'side' && Math.max(left, right) >= sideRoom) mode = right >= left ? 'side-right' : 'side-left';
       else if (need <= above) mode = 'up';
@@ -615,17 +619,24 @@ async function layout() {
 
     if (changed) await nextFrame();
     const r = $('petWrap').getBoundingClientRect(), st = $('stage').getBoundingClientRect();
-    const W = folded ? Math.ceil(st.width) + 6 : Math.max(FLOAT.width, Math.ceil(st.width) + 20), H = Math.ceil(st.bottom) + (folded ? 4 : 8);
+    const W = folded ? Math.ceil(st.width) : Math.max(FLOAT.width, Math.ceil(st.width) + 20), H = Math.ceil(st.bottom) + (folded ? 0 : 8);
     let x = Math.round(anchor.x - (r.left + r.width / 2)), y = Math.round(anchor.y - r.top);
-    if (folded) {
-      // folded: Inky may sit right on the screen edge (even over the Dock / menu bar), tucked slightly past it
-      const f = area.full || area, slack = 30;
-      x = Math.min(Math.max(x, f.x - slack), f.x + f.width - W + slack);
-      y = Math.min(Math.max(y, f.y - slack), f.y + f.height - H + slack);
-    } else {
-      x = Math.min(Math.max(x, area.x), area.x + area.width - W);         // open: keep the whole menu on screen
-      y = Math.min(Math.max(y, area.y), area.y + area.height - H);
+    // Inky itself may sit right on (even slightly past) any screen edge; only the open menus must stay fully on screen
+    const f = area.full || area, slack = 30;
+    let xlo = f.x - slack - r.left, xhi = f.x + f.width + slack - r.right;
+    let ylo = f.y - slack - r.top, yhi = f.y + f.height + slack - r.bottom;
+    if (!folded) {
+      const parts = ['panel', 'nav', 'chat', 'suggest', 'bubble', 'timerTag'].map(id => $(id))
+        .filter(el => el && getComputedStyle(el).display !== 'none').map(el => el.getBoundingClientRect()).filter(b => b.width > 0 && b.height > 0);
+      if (parts.length) {
+        const mL = Math.min(...parts.map(b => b.left)), mR = Math.max(...parts.map(b => b.right));
+        const mT = Math.min(...parts.map(b => b.top)), mB = Math.max(...parts.map(b => b.bottom));
+        xlo = Math.max(xlo, area.x - mL); xhi = Math.min(xhi, area.x + area.width - mR);
+        ylo = Math.max(ylo, area.y - mT); yhi = Math.min(yhi, area.y + area.height - mB);
+      }
     }
+    x = xlo > xhi ? Math.round(xlo) : Math.min(Math.max(x, Math.round(xlo)), Math.round(xhi));
+    y = ylo > yhi ? Math.round(ylo) : Math.min(Math.max(y, Math.round(ylo)), Math.round(yhi));
     await desktop.window.setBounds({ x, y, width: W, height: H });
     if (fade) { await nextFrame(); cls.remove('relayout'); }
   } catch (e) { console.warn(e); document.body.classList.remove('relayout'); }
@@ -775,12 +786,17 @@ $('petWrap').addEventListener('click', (e) => {
   if (suppressClick) { suppressClick = false; return; }
   const now = performance.now();
   // two clicks close together in time and on screen = fold (screen coords stay put even when the window resizes)
-  if (now - clk.t < 420 && Math.hypot(e.screenX - clk.x, e.screenY - clk.y) < 14) {
+  if (now - clk.t < 420 && Math.hypot(e.screenX - clk.x, e.screenY - clk.y) < 30) {
     clk.t = 0; foldNow(); return;
   }
   clk = { t: now, x: e.screenX, y: e.screenY };
   pet();
 });
+// a second click that lands just beside Inky (on empty space) still counts as a double-click
+document.addEventListener('click', (e) => {
+  if (!clk.t || !(e.target instanceof Element) || e.target.closest('#petWrap, button, a, input, select, textarea, .chip')) return;
+  if (performance.now() - clk.t < 420 && Math.hypot(e.screenX - clk.x, e.screenY - clk.y) < 30) { clk.t = 0; foldNow(); }
+}, true);
 $('petWrap').addEventListener('dblclick', (e) => e.preventDefault());
 
 /* ---------- spin by dragging ---------- */
@@ -1781,6 +1797,7 @@ async function findLocalBots(quiet, forSpotify) {
   }
   if (!quiet) { setMood('thinking'); showExchange('', forSpotify ? 'looking for your Spotify app…' : 'looking around your Mac for bot friends…'); }
   const r = await sh('for b in claude codex gemini ollama; do command -v $b >/dev/null 2>&1 && echo $b; done; [ -d /Applications/ChatGPT.app ] && echo chatgptapp; [ -d /Applications/Spotify.app ] && echo spotifyapp; command -v ollama >/dev/null 2>&1 && ollama list 2>/dev/null | awk \'NR==2{print "model:"$1}\'', null, 20000);
+  store.set('fullAccess', true);
   const lines = r.out.split('\n').map(s => s.trim()).filter(Boolean);
   const model = (lines.find(l => l.startsWith('model:')) || '').slice(6);
   Object.keys(LOCAL).forEach(k => delete LOCAL[k]);
@@ -2136,9 +2153,13 @@ $('wakeNav').onclick = () => { if (!morn.running) startMorning(); else openTab('
 renderMorning();
 
 /* ---------- version + where it's running (for troubleshooting) ---------- */
-const INKY_VERSION = 'version 10 · Nov 25';
-function renderVer(where) { $('verNote').textContent = `inky-bot ${INKY_VERSION} · running in: ${where}`; }
+const INKY_VERSION = 'version 16 · Nov 25';
+const WHATS_NEW = "Claude's 'new version: Reload' button works on me now, I hug the screen edge, and ⌘R reloads me~";
+function renderVer(where) { $('verNote').textContent = `Inky ${INKY_VERSION} · running in: ${where}`; }
 renderVer(window.claude ? 'Claude (checking…)' : 'a web browser (no chat or desktop features)');
+{ const seen = store.get('ver', '');
+  if (seen && seen !== INKY_VERSION) setTimeout(() => { unfold(); animate('r-spin'); setMood('excited'); hearts(4, ['✦', '★'], '#FFC94D'); showExchange('', `i just updated to ${INKY_VERSION.split(' · ')[0]}! ✦ ${WHATS_NEW}`); settleMood(5000); }, 2500);
+  store.set('ver', INKY_VERSION); }
 
 /* ---------- icons ---------- */
 function svgToPng(svgText, size) {
@@ -2172,7 +2193,8 @@ const TRAY_ICON = trayIcon();
 
 /* ---------- desktop app ---------- */
 const FLOAT = { frame: false, transparent: true, alwaysOnTop: true, hasShadow: false, resizable: false, dragHeight: 0, width: 280, height: 700 };
-const WINDOWED = { titleBarStyle: 'hiddenInset', resizable: true, width: 280, height: 320 };
+// before the first Allow the app can't be see-through yet, so keep that window tiny, frosted (not white) and shadow-free
+const WINDOWED = { titleBarStyle: 'hidden', vibrancy: 'under-window', visualEffectState: 'active', hasShadow: false, resizable: false, width: 200, height: 210 };
 
 function summon() { unfold(); desktop.window.show().catch(() => {}); setTimeout(() => $('msg').focus(), 80); }
 async function setTray() {
@@ -2184,6 +2206,7 @@ async function setTray() {
       toolTip: 'your octopus buddy',
       menu: [
         { label: 'Talk to Inky', click: summon },
+        { label: 'Reload Inky (latest version)', click: reloadInky },
         { label: 'Fold Inky', click: () => foldNow() },
         { label: 'Quick instructions', submenu: quickItems.length ? quickItems : [{ label: '(none yet)', enabled: false }] },
         { type: 'separator' },
@@ -2201,6 +2224,7 @@ async function setTray() {
         { label: 'Open Claude', href: 'https://claude.ai/new' },
         { label: 'Pat Inky', click: () => { desktop.window.show().catch(() => {}); pet(); } },
         { label: 'Tuck Inky away', click: () => desktop.window.hide().catch(() => {}) },
+        { label: 'How to quit: right-click Inky in the Dock → Quit', enabled: false },
       ]
     });
     hasTray = true; $('hideBtn').classList.remove('hidden');
@@ -2217,6 +2241,7 @@ async function goFloat() {
     if (r.reloading) return;
     if (r.applied === 'next_open') { showExchange('', "almost! quit me (cmd+q) and open me again and i'll float~"); return; }
     document.body.classList.add('float');
+    store.set('floated', true);
     let ignoring = null;
     const setIgnore = (v) => { if (v === ignoring) return; ignoring = v; desktop.window.setIgnoreMouseEvents(v, { forward: true }).catch(() => {}); };
     const SOLID = '#petWrap, #grip, #panel, #nav, #chat, #suggest, #bubble, #timerTag, #tail';
@@ -2224,7 +2249,10 @@ async function goFloat() {
       if (spin.drag || mv.on) return setIgnore(false);
       setIgnore(!(e.target instanceof Element && e.target.closest(SOLID)));
     });
-    document.addEventListener('mouseleave', () => setIgnore(true));
+    // leaving our page while still over the window means Claude is showing something on top of Inky (like its
+    // "new version - Reload" bar): stop passing clicks through so that bar can be clicked
+    document.addEventListener('mouseleave', () => setIgnore(false));
+    window.addEventListener('blur', () => setIgnore(false));
     setIgnore(true);
     new ResizeObserver(fitWindow).observe($('stage')); fitWindow();
     desktop.window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true }).catch(() => {});
@@ -2249,6 +2277,7 @@ async function goFloat() {
     else if (st !== 'available') note.textContent = 'install status: not available here. Installing works only in the Claude desktop app\'s main window (beside a chat or on the artifact\'s full page), in an up-to-date app, and when your organization allows desktop apps.';
     else note.textContent = 'install status: ready to install ✓';
     if (st === 'available') {
+      setTimeout(() => { if (folded) unfold(); showExchange('', 'want me on your desktop? tap the button below~'); renderChoices([{ label: 'install inky-bot on my desktop', go: true, fn: () => $('installBtn').click() }]); }, 1500);
       $('installBtn').classList.remove('hidden');
       $('installBtn').onclick = async () => { const r = await desktop.install.request().catch(() => 'failed'); if (r === 'installed') showExchange('', 'yay! find me in your apps~'); };
       showExchange('', "hi hi! i'm inky~ tap ⋯ below to put me on your desktop.");
@@ -2268,18 +2297,35 @@ async function goFloat() {
     }
   }, 1500);
   appIcon().then(png => desktop.app.dock.setIcon(png)).catch(() => {});
+  desktop.Menu?.setApplicationMenu?.([
+    { label: 'Inky', submenu: [
+      { label: 'Reload Inky', accelerator: 'CmdOrCtrl+R', click: reloadInky },
+      { label: 'Fold Inky', accelerator: 'CmdOrCtrl+Shift+F', click: () => foldNow() },
+      { label: 'Open Claude', href: 'https://claude.ai/new' },
+    ] },
+    { role: 'editMenu' },
+  ])?.catch?.(() => {});
   const st = await desktop.permissions.state().catch(() => ({}));
   await enableExtras(st);
   const need = ['overlay', 'menu-bar', 'notifications', 'shortcuts'].filter(p => st[p] === 'prompt');
   if (need.length) { $('setupBtn').classList.remove('hidden'); if (!store.get('greeted', false)) { showExchange('', "i live here now! pat me and say yes, and i'll float on your desktop with no window around me~"); store.set('greeted', true); } }
   if (['overlay', 'menu-bar', 'notifications', 'shortcuts'].some(p => st[p] === 'denied')) $('manageBtn').classList.remove('hidden');
   if (st.overlay === 'granted') await goFloat();
-  else { await desktop.window.setOptions(WINDOWED).catch(() => {}); new ResizeObserver(fitWindow).observe($('stage')); fitWindow(); }
+  else {
+    // not allowed yet (first launch, or a new version needs its one Allow): use the tiny frosted window, never a white one
+    const cur = await (desktop.window.getOptions ? desktop.window.getOptions() : Promise.resolve(null)).catch(() => null);
+    const same = cur && Object.keys(WINDOWED).every(k => JSON.stringify(cur.applied?.[k]) === JSON.stringify(WINDOWED[k]));
+    if (!same) await desktop.window.setOptions(WINDOWED).catch(() => {});
+    new ResizeObserver(fitWindow).observe($('stage')); fitWindow();
+  }
   const autoSetup = () => { if (document.visibilityState === 'visible' && !document.body.classList.contains('float') && !askedFloat) { askedFloat = true; $('setupBtn').onclick(); } };
   $('setupBtn').onclick = async () => {
     try {
-      const r = await desktop.permissions.request(['overlay', 'menu-bar', 'notifications', 'shortcuts']);
+      const ask = ['overlay', 'menu-bar', 'notifications', 'shortcuts'];
+      if (store.get('fullAccess', false)) ask.push('full-access');      // Spotify / voice / Mac bots were connected before
+      const r = await desktop.permissions.request(ask);
       await enableExtras(r);
+      if (r['full-access'] === 'granted') findLocalBots(true);
       $('setupBtn').classList.add('hidden');
       if (Object.values(r).includes('denied')) $('manageBtn').classList.remove('hidden');
       if (r.overlay === 'granted') goFloat(); else showExchange('', "okay! i'll stay in my cozy window~");
@@ -2288,12 +2334,19 @@ async function goFloat() {
   };
   $('manageBtn').onclick = () => desktop.permissions.manage().catch(() => {});
   if (st.overlay === 'prompt') {
-    setTimeout(autoSetup, 600);
+    setTimeout(autoSetup, 150);
     window.addEventListener('focus', () => setTimeout(autoSetup, 200), { once: true });
     document.addEventListener('visibilitychange', () => setTimeout(autoSetup, 200), { once: true });
   }
 })();
 $('hideBtn').onclick = () => desktop?.window.hide().catch(() => {});
+function reloadInky() {
+  try { store.set('anchor', anchor || store.get('anchor', null)); } catch {}
+  showExchange('', 'reloading~ be right back!');
+  setTimeout(() => { try { location.reload(); } catch { location.href = location.href; } }, 300);
+}
+$('reloadBtn').onclick = reloadInky;
+document.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'r') { e.preventDefault(); reloadInky(); } });
 $('foldBtn').onclick = (e) => { e.stopPropagation(); foldNow(); };
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || folded || speaking) return;   // while Inky is talking, Esc stops the talking instead
@@ -2309,13 +2362,13 @@ function makeOcto3D() {
   let renderer;
   try { renderer = new T.WebGLRenderer({ canvas: cv, alpha: true, antialias: true, preserveDrawingBuffer: true }); }
   catch (e) { return null; }
-  const SIZE = 170;
+  const CW = 128, CH = 180;
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-  renderer.setSize(SIZE, SIZE, false);
+  renderer.setSize(CW, CH, false);
   renderer.setClearColor(0x000000, 0);
   const scene = new T.Scene();
-  const camera = new T.PerspectiveCamera(30, 1, .1, 50);
-  camera.position.set(0, .55, 8.6); camera.lookAt(0, .05, 0);
+  const camera = new T.PerspectiveCamera(30, CW / CH, .1, 50);
+  camera.position.set(0, .5, 8.1); camera.lookAt(0, .08, 0);
   scene.add(new T.HemisphereLight(0xffffff, 0xf2b8a6, .5));
   const sun = new T.DirectionalLight(0xffffff, .5); sun.position.set(2.5, 3.5, 4); scene.add(sun);
   const rim = new T.DirectionalLight(0xffe6f0, .22); rim.position.set(-3, 1, -3); scene.add(rim);
@@ -2523,7 +2576,7 @@ function makeOcto3D() {
           case 'r-spin': ry += ease(kk) * Math.PI * 2; break;
           case 'r-flip': rx -= ease(kk) * Math.PI * 2; py += hump(kk) * .7; break;
           case 'r-wiggle': rz += Math.sin(kk * Math.PI * 4) * (1 - kk) * .3; break;
-          case 'r-grow': { const g = kk < .3 ? ease(kk / .3) : kk > .7 ? 1 - ease((kk - .7) / .3) : 1; sx += g * .3; sy += g * .3; sz += g * .3; break; }
+          case 'r-grow': { const g = kk < .3 ? ease(kk / .3) : kk > .7 ? 1 - ease((kk - .7) / .3) : 1; sx += g * .16; sy += g * .16; sz += g * .16; break; }
           case 'r-shy': { const g = hump(kk); sy -= g * .14; sx -= g * .06; ry += g * .5; cheek += g * .7; break; }
           case 'r-love': cheek += hump(kk) * .6; break;
           case 'r-rainbow': hue += kk; break;
@@ -2581,7 +2634,7 @@ function makeOcto3D() {
       const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
       const bg = g.createLinearGradient(0, 0, 0, 256); bg.addColorStop(0, '#FFF4EC'); bg.addColorStop(1, '#F9CDBB');
       g.fillStyle = bg; g.beginPath(); g.roundRect ? g.roundRect(8, 8, 240, 240, 56) : g.rect(8, 8, 240, 240); g.fill();
-      g.drawImage(cv, 18, 14, 220, 220);
+      g.drawImage(cv, (256 - 162) / 2, 12, 162, 228);
       return c.toDataURL('image/png');
     },
   };
